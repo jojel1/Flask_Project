@@ -13,7 +13,7 @@ const HISTORY_REFRESH_MS = 60000;
 
 // API requests use relative URLs.
 // They automatically use the same host and port
-// as your Flask application (port 5050).
+// as your Flask application.
 
 // ==================================================
 // 2. HELPER FUNCTIONS
@@ -104,6 +104,22 @@ function formatFeedingTime(value) {
     return `${hour12}:${minute} ${suffix}`;
 }
 
+// Convert the reported feeder status into the dashboard label.
+function displayFeederStatus(status) {
+    const normalized = String(status || "unknown").toLowerCase();
+
+    if (normalized === "idle") {
+        return "Active";
+    }
+
+    if (normalized === "unknown") {
+        return "Waiting for device status";
+    }
+
+    return normalized.charAt(0).toUpperCase() +
+        normalized.slice(1);
+}
+
 async function requestJSON(url, options = {}) {
     const response = await fetch(url, {
         credentials: "same-origin",
@@ -188,7 +204,9 @@ async function loadTelemetry() {
                 "Waiting for sensor data"
             );
 
-            if (connEl) connEl.style.color = "";
+            if (connEl) {
+                connEl.style.color = "";
+            }
 
             setText("temperature", "--");
             setText("humidity", "--");
@@ -249,12 +267,14 @@ async function loadTelemetry() {
             ageMs >= -60000 &&
             ageMs <= 30000;
 
+        // CONNECTION STATUS
         if (isFresh) {
             setText("connection-status", "Connected");
 
             if (connEl) {
                 connEl.style.color = "#16a34a";
             }
+
         } else {
             setText(
                 "connection-status",
@@ -266,17 +286,13 @@ async function loadTelemetry() {
             }
         }
 
-        const status = String(
-            telemetry.feeder_status || "unknown"
-        ).toLowerCase();
-
-        setText(
-            "feeder-status",
-            status === "unknown"
-                ? "Waiting for device status"
-                : status.charAt(0).toUpperCase() +
-                  status.slice(1)
+        // FEEDER STATUS
+        // Idle will be displayed as Active.
+        const status = displayFeederStatus(
+            telemetry.feeder_status
         );
+
+        setText("feeder-status", status);
 
     } catch (error) {
         console.error("Telemetry error:", error);
@@ -453,26 +469,17 @@ async function loadRecoveredFeedingHistory() {
         records.forEach((record) => {
             const row = document.createElement("tr");
 
-            // ------------------------------------------
             // 1. DATE
-            // ------------------------------------------
-
             const dateValue = historicalValue(
                 record.feeding_date
             );
 
-            // ------------------------------------------
             // 2. FEEDING TIME
-            // ------------------------------------------
-
             const timeValue = historicalValue(
                 record.feeding_time
             );
 
-            // ------------------------------------------
             // 3. PIG WEIGHT
-            // ------------------------------------------
-
             const weightValue =
                 record.pig_weight_kg === null ||
                 record.pig_weight_kg === undefined ||
@@ -483,18 +490,12 @@ async function loadRecoveredFeedingHistory() {
                         2
                     );
 
-            // ------------------------------------------
             // 4. WEIGHT RANGE CATEGORY
-            // ------------------------------------------
-
             const categoryValue = historicalValue(
                 record.weight_range_category
             );
 
-            // ------------------------------------------
             // 5. FEED AMOUNT
-            // ------------------------------------------
-
             const feedValue =
                 record.feed_amount_kg === null ||
                 record.feed_amount_kg === undefined ||
@@ -505,18 +506,10 @@ async function loadRecoveredFeedingHistory() {
                         3
                     )} kg`;
 
-            // ------------------------------------------
             // 6. RESULT / RECORD SOURCE
-            // ------------------------------------------
-
-            // Blank if result is missing or says NOT RECORDED.
             const finalResult = historicalValue(
                 record.result ?? record.record_source
             );
-
-            // ------------------------------------------
-            // CREATE TABLE CELLS
-            // ------------------------------------------
 
             const values = [
                 dateValue,
