@@ -1,0 +1,286 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>Automated IoT Feeder Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"
+            defer></script>
+</head>
+
+<body>
+    <div class="green-bar"></div>
+
+    <main class="dashboard">
+
+        <!-- HEADER -->
+        <header class="dashboard-header">
+            <div class="header-title">
+                <h1>Automated IoT Feeder</h1>
+                <p>Smart Pig Feeding and Monitoring System</p>
+            </div>
+
+            <form action="{{ url_for('logout') }}" method="post">
+                <input type="hidden"
+                       name="csrf_token"
+                       value="{{ csrf_token() }}">
+
+                <button type="submit" class="logout-button">
+                    Log out
+                </button>
+            </form>
+        </header>
+
+        <div class="dashboard-layout">
+
+            <!-- LEFT COLUMN -->
+            <div class="left-column">
+
+                <h2 class="section-title">
+                    Live Sensor Monitoring
+                </h2>
+
+                <!-- LIVE SENSOR CARDS -->
+                <section class="sensor-grid">
+
+                    <article class="card sensor-card">
+                        <div class="sensor-icon">🐖</div>
+                        <h3>Pig Weight</h3>
+                        <p class="sensor-value">
+                            <strong id="pig-weight">--</strong>
+                            <span>kg</span>
+                        </p>
+                    </article>
+
+                    <article class="card sensor-card">
+                        <div class="sensor-icon">🌡️</div>
+                        <h3>Temperature</h3>
+                        <p class="sensor-value">
+                            <strong id="temperature">--</strong>
+                            <span>°C</span>
+                        </p>
+                    </article>
+
+                    <article class="card sensor-card">
+                        <div class="sensor-icon">💧</div>
+                        <h3>Humidity</h3>
+                        <p class="sensor-value">
+                            <strong id="humidity">--</strong>
+                            <span>%</span>
+                        </p>
+                    </article>
+
+                    <article class="card sensor-card">
+                        <div class="sensor-icon">🌾</div>
+                        <h3>Measured Feed</h3>
+                        <p class="sensor-value">
+                            <strong id="feed-weight">--</strong>
+                            <span>g</span>
+                        </p>
+                    </article>
+
+                </section>
+
+                <!-- CONNECTION AND FEEDER STATUS -->
+                <section class="card status-card">
+                    <h2>Feeder Status</h2>
+
+                    <p>
+                        Connection:
+                        <strong id="connection-status">
+                            Waiting for ESP32...
+                        </strong>
+                    </p>
+
+                    <p>
+                        Feeder:
+                        <strong id="feeder-status">--</strong>
+                    </p>
+
+                    <p id="target-feed">Target feed: -- g</p>
+                    <p id="last-updated">Last update: --</p>
+                </section>
+
+                <!-- MANUAL FEEDING -->
+                <section class="card manual-card">
+                    <h2>Manual Feeding</h2>
+
+                    <form id="feed-form">
+                        <label for="feed-amount">
+                            Feed amount (grams)
+                        </label>
+
+                        <input
+                            id="feed-amount"
+                            name="feed_amount"
+                            type="number"
+                            min="1"
+                            max="5000"
+                            step="1"
+                            value="250"
+                            required
+                        >
+
+                        <button
+                            id="feed-button"
+                            type="submit"
+                            class="feed-button"
+                        >
+                            Feed Now
+                        </button>
+                    </form>
+
+                    <p id="feed-message" aria-live="polite">
+                        Ready.
+                    </p>
+                </section>
+
+                <!-- RECENT FEEDING COMMANDS -->
+                <section class="card activity-card">
+                    <h2>Recent Feeding Activity</h2>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date / Time</th>
+                                    <th>Target Feed (g)</th>
+                                    <th>Status</th>
+                                    <th>Result</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="activity-list">
+                                <tr>
+                                    <td colspan="4">
+                                        Loading feeding activity...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- HISTORICAL FEEDING RECORDS -->
+                <section class="card historical-card">
+                    <h2>Historical Pig Feeding Records</h2>
+
+                    <p class="history-description">
+                        Two feeding sessions per day:
+                        6:00 AM and 5:00 PM.
+                        Each row represents one feeding session.
+                    </p>
+
+                    <div class="table-wrap">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Feeding Time</th>
+                                    <th>Pig Weight (kg)</th>
+                                    <th>Weight Range</th>
+                                    <th>Feed Amount (kg)</th>
+                                    <th>Result</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="historicalRecordsBody">
+                                <tr>
+                                    <td colspan="6">
+                                        Loading historical records...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <aside class="right-column">
+
+                <!-- ESP32-CAM -->
+                <section class="card camera-card">
+                    <h2>Live ESP32 Camera</h2>
+
+                    <div class="camera-screen">
+                        <img
+                            id="esp32-camera"
+                            src="http://192.168.1.29/stream"
+                            alt="Live view of the pig-feeding area"
+                            loading="eager"
+                            style="display: block; width: 100%; height: auto;"
+                        >
+
+                        <div
+                            id="camera-placeholder"
+                            class="camera-placeholder"
+                            style="display: none;"
+                        >
+                            <span class="camera-symbol">📷</span>
+
+                            <p id="camera-message">
+                                Connecting to ESP32-CAM...
+                            </p>
+
+                            <small>
+                                Check camera power and Wi-Fi connection.
+                            </small>
+                        </div>
+                    </div>
+
+                    <p class="camera-note">
+                        Live view from your pig-feeding area
+                    </p>
+
+                    <p id="camera-status" aria-live="polite">
+                        Connecting to camera...
+                    </p>
+
+                    <p>
+                        Camera stream:
+                        <a
+                            href="http://192.168.1.29/stream"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Open camera directly
+                        </a>
+                    </p>
+
+                    <p class="camera-note">
+                        Camera IP: 192.168.1.29
+                    </p>
+                </section>
+
+                <!-- UNIVERSITY LOGO -->
+                <section class="university-card">
+                    <img
+                        class="university-logo"
+                        src="{{ url_for(
+                            'static',
+                            filename='images/snsu-logo.png'
+                        ) }}"
+                        alt="Surigao del Norte State University logo"
+                        onerror="this.style.display='none'"
+                    >
+
+                    <h2>Surigao Del Norte State University</h2>
+                </section>
+
+            </aside>
+
+        </div>
+    </main>
+
+    <div class="green-bar bottom-bar"></div>
+</body>
+</html>
