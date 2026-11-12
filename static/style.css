@@ -1,3 +1,4 @@
+
 /* =========================
    GENERAL PAGE SETTINGS
 ========================= */
@@ -656,4 +657,19 @@ tbody td {
     .history-table td:last-child {
         text-align: center;
     }
+}
+
+/* =========================
+   CONNECTION AND FEEDER STATUS COLORS
+========================= */
+
+/* Connected status is green. */
+#connection-status.connected {
+    color: #16a34a;
+}
+
+/* Feeder status is displayed in green (including Active). */
+#feeder-status {
+    color: #16a34a;
+    font-weight: 700;
 }
